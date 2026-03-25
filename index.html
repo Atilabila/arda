@@ -336,7 +336,10 @@
 
         <!-- RIGHT: Leaderboard -->
         <div class="panel">
-          <h2>TOP PLAYERS</h2>
+          <h2 style="display:flex; justify-content:space-between; align-items:center;">
+            TOP PLAYERS
+            <button onclick="app.fetchLeaderboard()" style="background:transparent; border:none; color:var(--accent-magenta); font-size:1.5rem; cursor:pointer;" title="Listeyi Yenile">↻</button>
+          </h2>
           <div id="lb-loading" style="color:var(--text-muted); font-size:0.9rem;">Yükleniyor...</div>
           <ul class="leaderboard-list" id="leaderboard-list">
             <!-- Populated via Supabase -->
@@ -348,7 +351,10 @@
     <!-- VIEW: STUDY -->
     <div id="view-study" class="view">
       <div class="study-header">
-        <button class="back-btn" onclick="app.showMenu()">← Çıkış</button>
+        <div>
+          <button class="back-btn" onclick="app.showMenu()">← Çıkış</button>
+          <button class="back-btn" onclick="app.goBackStudy()" id="btn-study-prev" style="margin-left:0.5rem; display:none;">← Önceki Soru</button>
+        </div>
         <div style="font-family: var(--font-display); color: var(--text-muted);">
           KELİME: <strong id="study-progress" style="color: var(--accent-neon);">1/5</strong>
         </div>
@@ -383,6 +389,7 @@
           </div>
 
           <button class="primary-btn" onclick="app.handleTypingSubmit()" id="btn-submit-typing">KONTROL ET</button>
+          <button class="primary-btn" onclick="app.startHintChallenge()" id="btn-hint" style="background:transparent; color:var(--accent-neon); border:1px solid var(--accent-neon); margin-left:0.5rem;">💡 İPUCU AL</button>
           <button class="primary-btn" onclick="app.handleStudyTypingNext()" id="btn-next-typing" style="display:none; background:var(--accent-success);">SONRAKİ KELİME</button>
         </div>
       </div>
@@ -391,7 +398,10 @@
     <!-- VIEW: TEST -->
     <div id="view-test" class="view">
       <div class="study-header">
-        <button class="back-btn" onclick="app.showMenu()">← Vazgeç</button>
+        <div>
+          <button class="back-btn" onclick="app.showMenu()">← Vazgeç</button>
+          <button class="back-btn" onclick="app.goBackTest()" id="btn-test-prev" style="margin-left:0.5rem; display:none;">← Önceki Soru</button>
+        </div>
         <div style="font-family:var(--font-display); color:var(--text-muted);">
           SORU: <strong id="test-q-counter" style="color:var(--accent-neon);">1/20</strong>
         </div>
@@ -404,6 +414,20 @@
 
       <div class="bottom-actions">
         <button class="primary-btn" onclick="app.handleTestNext()" id="btn-test-next" style="display:none;">SIRADAKİ SORU</button>
+      </div>
+    </div>
+
+    <!-- VIEW: HINT CHALLENGE -->
+    <div id="view-hint-challenge" class="view">
+      <div class="study-header">
+        <div style="font-family:var(--font-display); color:var(--accent-magenta); width:100%; text-align:center; font-size:1.5rem;">
+          💡 ÖĞRETİCİ İPUCU SINAVI ( <span id="hint-progress">1/3</span> )
+        </div>
+      </div>
+      <div class="sentence-box" id="hint-question-box" style="border-color:var(--accent-magenta);"></div>
+      <div class="options-grid" id="hint-options"></div>
+      <div class="bottom-actions">
+         <button class="primary-btn" id="btn-hint-next" style="display: none;" onclick="app.nextHintQuestion()">DEVAM ET</button>
       </div>
     </div>
 
@@ -474,6 +498,7 @@
         studyWords: [],
         studyWordIndex: 0,
         currentStudyWord: null,
+        answeredStudyWords: [], // ANTI-FARMING tracker
 
         testQuestions: [],
         currentTestIndex: 0,
@@ -481,6 +506,10 @@
         timerInterval: null,
         timeLeft: 0,
         isTestAnswered: false,
+        testAnswerHistory: [], // ANTI-FARMING tracker for Boss Battle
+        
+        hintQuestions: [],
+        hintIndex: 0
       },
 
       async init() {
@@ -658,6 +687,7 @@
           return;
         }
         document.getElementById('study-progress').textContent = `${idx + 1}/${this.state.studyWords.length}`;
+        document.getElementById('btn-study-prev').style.display = idx > 0 ? 'inline-block' : 'none';
         this.state.currentStudyWord = this.state.studyWords[idx];
         this.setupStudyMcq();
       },
@@ -689,7 +719,10 @@
         document.querySelectorAll('#study-options .option-btn').forEach(b => b.disabled = true);
         if (isCorrect) {
           btn.classList.add('correct');
-          this.addPointsAndSave(5, 0); // +5 per correct MCQ
+          if (!this.state.answeredStudyWords.includes(correctId + "_mcq")) {
+             this.state.answeredStudyWords.push(correctId + "_mcq");
+             this.addPointsAndSave(5, 0); // +5 per correct MCQ
+          }
         } else {
           btn.classList.add('wrong');
           document.querySelectorAll('#study-options .option-btn').forEach((b, i) => {
@@ -714,6 +747,7 @@
         
         document.getElementById('typing-feedback').textContent = '';
         document.getElementById('btn-submit-typing').style.display = 'inline-block';
+        document.getElementById('btn-hint').style.display = 'inline-block';
         document.getElementById('btn-next-typing').style.display = 'none';
         setTimeout(() => input.focus(), 100);
       },
@@ -739,8 +773,13 @@
           document.getElementById('typing-feedback').textContent = "PERFECT!";
           document.getElementById('typing-feedback').className = 'feedback-msg success';
           document.getElementById('btn-submit-typing').style.display = 'none';
+          document.getElementById('btn-hint').style.display = 'none';
           document.getElementById('btn-next-typing').style.display = 'inline-block';
-          this.addPointsAndSave(10, 0); // +10 per correct spelling
+          
+          if (!this.state.answeredStudyWords.includes(this.state.currentStudyWord.id + "_typing")) {
+             this.state.answeredStudyWords.push(this.state.currentStudyWord.id + "_typing");
+             this.addPointsAndSave(10, 0); // +10 per correct spelling
+          }
         } else {
           input.classList.add('error');
           document.getElementById('typing-feedback').textContent = "TRY AGAIN";
@@ -752,6 +791,88 @@
       handleStudyTypingNext() {
         this.state.studyWordIndex++;
         this.loadStudyWord();
+      },
+
+      goBackStudy() {
+        if (this.state.studyWordIndex > 0) {
+           this.state.studyWordIndex--;
+           this.loadStudyWord();
+        }
+      },
+
+      // ======= HINT CHALLENGE =======
+      startHintChallenge() {
+        const cw = this.state.currentStudyWord;
+        const generateFakes = () => VOCABULARY.filter(w => w.id !== cw.id).sort(()=>0.5-Math.random()).slice(0,3);
+        
+        this.state.hintQuestions = [
+          { q: `'${cw.translation}' anlamına gelen kelime hangisidir?`, target: cw, options: [cw, ...generateFakes()].sort(()=>0.5-Math.random()) },
+          { q: `'${cw.word}' kelimesinin Türkçe karşılığı nedir?`, target: cw, options: [cw, ...generateFakes()].sort(()=>0.5-Math.random()), useTranslation: true },
+          { q: cw.example_sentence.replace('{word}', '_____'), target: cw, options: [cw, ...generateFakes()].sort(()=>0.5-Math.random()) }
+        ];
+        
+        this.state.hintIndex = 0;
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-hint-challenge').classList.add('active');
+        this.renderHintQuestion();
+      },
+
+      renderHintQuestion() {
+        document.getElementById('hint-progress').textContent = `${this.state.hintIndex + 1}/3`;
+        const qObj = this.state.hintQuestions[this.state.hintIndex];
+        document.getElementById('hint-question-box').innerHTML = qObj.q;
+        const grid = document.getElementById('hint-options');
+        grid.innerHTML = '';
+        document.getElementById('btn-hint-next').style.display = 'none';
+        
+        qObj.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = qObj.useTranslation ? opt.translation : opt.word;
+          btn.onclick = (e) => this.evalHintOption(e.target, opt.id === qObj.target.id);
+          grid.appendChild(btn);
+        });
+      },
+
+      evalHintOption(btn, isCorrect) {
+        document.querySelectorAll('#hint-options .option-btn').forEach(b => b.disabled = true);
+        if (isCorrect) {
+          btn.classList.add('correct');
+          document.getElementById('btn-hint-next').style.display = 'block';
+        } else {
+          btn.classList.add('wrong');
+          btn.style.animation = 'shake 0.4s';
+          setTimeout(() => {
+            alert("İpucu sınavını geçemediniz! Baştan başlıyor.");
+            this.state.hintIndex = 0;
+            this.renderHintQuestion();
+          }, 800);
+        }
+      },
+
+      nextHintQuestion() {
+        this.state.hintIndex++;
+        if (this.state.hintIndex >= 3) {
+           alert("💡 İPUCU BAŞARIYLA KAZANILDI!");
+           document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+           document.getElementById('view-study').classList.add('active');
+           
+           const input = document.getElementById('typing-input');
+           input.value = this.state.currentStudyWord.word;
+           input.classList.add('success'); input.classList.remove('error'); input.disabled = true;
+           document.getElementById('typing-feedback').textContent = "HINT USED!";
+           document.getElementById('typing-feedback').className = 'feedback-msg success';
+           document.getElementById('btn-submit-typing').style.display = 'none';
+           document.getElementById('btn-hint').style.display = 'none';
+           document.getElementById('btn-next-typing').style.display = 'inline-block';
+           
+           // Hint kullandığı için anti-farming'e ekleyelim ki kopyalayıp silip puan almasın
+           if (!this.state.answeredStudyWords.includes(this.state.currentStudyWord.id + "_typing")) {
+              this.state.answeredStudyWords.push(this.state.currentStudyWord.id + "_typing");
+           }
+        } else {
+           this.renderHintQuestion();
+        }
       },
 
       // ======= FINAL TEST =======
@@ -803,6 +924,7 @@
         const qObj = this.state.testQuestions[this.state.currentTestIndex];
         
         document.getElementById('test-q-counter').textContent = `${this.state.currentTestIndex + 1}/20`;
+        document.getElementById('btn-test-prev').style.display = this.state.currentTestIndex > 0 ? 'inline-block' : 'none';
         // Format test question creatively
         document.getElementById('test-question-box').innerHTML = `
           <div style="font-size:0.9rem; color:var(--text-muted); font-family:var(--font-display);">TRANSLATE</div>
@@ -820,6 +942,13 @@
         });
       },
 
+      goBackTest() {
+        if (this.state.currentTestIndex > 0) {
+           this.state.currentTestIndex--;
+           this.renderTestQuestion();
+        }
+      },
+
       evalTestOption(btn, isCorrect, optionsData, correctId) {
         if (this.state.isTestAnswered) return;
         this.state.isTestAnswered = true;
@@ -828,9 +957,16 @@
 
         if (isCorrect) {
           btn.classList.add('correct');
-          this.state.correctAnswersCount++;
+          if (this.state.testAnswerHistory[this.state.currentTestIndex] !== true) {
+             this.state.testAnswerHistory[this.state.currentTestIndex] = true;
+             this.state.correctAnswersCount++;
+          }
         } else {
           btn.classList.add('wrong');
+          if (this.state.testAnswerHistory[this.state.currentTestIndex] === true) {
+             this.state.testAnswerHistory[this.state.currentTestIndex] = false;
+             this.state.correctAnswersCount--;
+          }
           document.querySelectorAll('#view-test .option-btn').forEach((b, i) => {
             if (optionsData[i].id === correctId) b.classList.add('correct');
           });
