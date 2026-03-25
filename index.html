@@ -524,6 +524,9 @@
         
         if (!signInError) {
           errObj.textContent = ""; 
+          // Check/Sync Leaderboard for manually added users
+          const { data: lbData } = await supabaseClient.from('leaderboard').select('id').eq('user_id', signInData.user.id).single();
+          if (!lbData) { await supabaseClient.from('leaderboard').insert([{ user_id: signInData.user.id, username, score: 0, stars: 0 }]); }
           await this.handleUserLogin(signInData.user);
         } else {
           // If login fails (doesn't exist), try to auto-Signup
