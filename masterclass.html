@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C2 Hungarian-Turkish Masterclass</title>
+  <style>
+    /* Premium Dark Mode Variables */
+    :root {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --bg-tertiary: #2a2a2a;
+      
+      --text-main: #f5f5f7;
+      --text-muted: #a1a1aa;
+      --text-subtle: #52525b;
+      
+      --accent-primary: #8b5cf6;
+      --accent-primary-hover: #7c3aed;
+      --accent-success: #10b981;
+      --accent-success-bg: rgba(16, 185, 129, 0.15);
+      --accent-failure: #ef4444; 
+      --accent-failure-bg: rgba(239, 68, 68, 0.15);
+      
+      --border-color: #3f3f46;
+      --border-focused: #5b21b6;
+      --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --transition-speed: 0.3s;
+      --border-radius-lg: 16px;
+      --border-radius-md: 12px;
+      --border-radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header { margin-bottom: 2rem; text-align: center; }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-main), var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+
+    button {
+      background: var(--bg-secondary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius-sm);
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all var(--transition-speed) ease;
+    }
+    button:hover:not(:disabled) { background: var(--bg-tertiary); transform: translateY(-2px); }
+    button.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+    button.primary:hover:not(:disabled) { background: var(--accent-primary-hover); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .view { display: none; flex: 1; animation: fadeIn var(--transition-speed) ease; }
+    .view.active { display: flex; flex-direction: column; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* MENU VIEW */
+    .menu-section {
+      margin-top: 2rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+    }
+    .menu-header {
+      padding: 1.5rem;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .menu-header h2 { font-size: 1.5rem; }
+    
+    .topic-list { display: flex; flex-direction: column; }
+    .topic-item {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background var(--transition-speed);
+      cursor: pointer;
+    }
+    .topic-item:hover { background: rgba(255,255,255,0.02); }
+    .topic-item:last-child { border-bottom: none; }
+    .topic-info h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+    .topic-info p { font-size: 0.9rem; color: var(--text-muted); }
+    .topic-status {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .status-done { background: var(--accent-success-bg); color: var(--accent-success); }
+    .status-pending { background: var(--bg-tertiary); color: var(--text-muted); }
+
+    .final-test-block {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(30,30,30,1));
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--border-radius-lg);
+      text-align: center;
+    }
+
+    /* STUDY / TEST VIEWS */
+    .study-header, .test-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2rem; padding: 1rem;
+      background: var(--bg-secondary); border-radius: var(--border-radius-lg);
+    }
+
+    .sentence-box {
+      background: var(--bg-secondary);
+      border-left: 4px solid var(--accent-primary);
+      padding: 2rem;
+      border-radius: var(--border-radius-md);
+      margin-bottom: 2rem;
+      font-size: 1.35rem;
+      font-weight: 500;
+      line-height: 1.8;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .blank-word {
+      display: inline-block;
+      min-width: 100px;
+      border-bottom: 2px solid var(--text-muted);
+      margin: 0 0.5rem;
+      text-align: center;
+      color: var(--accent-primary);
+      font-weight: 700;
+      padding: 0 0.5rem;
+    }
+
+    .options-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .option-btn {
+      text-align: left; padding: 1.25rem; font-size: 1.1rem;
+      background: var(--bg-tertiary); border: 2px solid var(--border-color);
+      border-radius: var(--border-radius-sm);
+    }
+    .option-btn:hover:not(:disabled) { border-color: var(--text-muted); }
+    
+    .option-btn.correct {
+      background: var(--accent-success-bg);
+      border-color: var(--accent-success);
+      color: var(--accent-success);
+    }
+    .option-btn.wrong {
+      background: var(--accent-failure-bg);
+      border-color: var(--accent-failure);
+      color: var(--accent-failure);
+    }
+
+    /* TYPING MODE */
+    .typing-container {
+      background: var(--bg-secondary);
+      padding: 2.5rem;
+      border-radius: var(--border-radius-lg);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .typing-input {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-tertiary);
+      border: 2px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 1.5rem;
+      padding: 1rem;
+      border-radius: var(--border-radius-sm);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-family: inherit;
+      transition: border-color var(--transition-speed);
+      outline: none;
+    }
+    .typing-input:focus { border-color: var(--border-focused); }
+    .typing-input.error { border-color: var(--accent-failure); animation: shake 0.4s; }
+    .typing-input.success { border-color: var(--accent-success); color: var(--accent-success); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .key-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1rem;
+      font-size: 1.25rem;
+      border-radius: var(--border-radius-sm);
+      min-width: 45px;
+    }
+    .key-btn:hover { background: var(--bg-secondary); border-color: var(--text-muted); }
+
+    .bottom-actions { display: flex; justify-content: flex-end; }
+    
+    .feedback-msg {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      height: 1.5rem;
+    }
+    .feedback-msg.error { color: var(--accent-failure); }
+    .feedback-msg.success { color: var(--accent-success); }
+
+    /* RESULTS VIEW */
+    .result-stars { font-size: 4rem; color: var(--border-color); display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;}
+    .result-stars span.filled { color: #fbbf24; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>C2 Masterclass</h1>
+      <p class="subtitle" id="app-subtitle">Etap 1: İçindekiler</p>
+    </header>
+
+    <!-- VIEW: MENU -->
+    <div id="view-menu" class="view active">
+      <div class="menu-section">
+        <div class="menu-header">
+          <h2>Öğrenme Konuları (Etap 1)</h2>
+        </div>
+        <div class="topic-list" id="topic-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="final-test-block">
+        <h2 style="margin-bottom: 1rem;">Etap 1: Final Testi (20 Soru)</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Tüm konuları çalıştıktan sonra bu sınava girerek bir sonraki aşamanın kilidini açabilirsin.</p>
+        <button class="primary" style="font-size: 1.2rem; padding: 1rem 3rem;" onclick="app.startFinalTest()">Final Testine Başla</button>
+      </div>
+    </div>
+
+    <!-- VIEW: STUDY (Contextual MCQ & Typing) -->
+    <div id="view-study" class="view">
+      <div class="study-header">
+        <button onclick="app.showView('menu')">← Çıkış</button>
+        <div>
+          <span style="color: var(--text-muted);">İlerleme:</span>
+          <strong id="study-progress" style="margin-left: 0.5rem;">1/5</strong>
+        </div>
+      </div>
+
+      <!-- Step 1: Multiple Choice Context -->
+      <div id="study-mcq-container">
+        <p style="color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">AŞAMA 1: Anlamı Seç</p>
+        <div class="sentence-box" id="study-sentence-mcq">
+           <!-- Sentence goes here -->
+        </div>
+        <div class="options-grid" id="study-options">
+          <!-- Populated dynamically -->
+        </div>
+        <div class="bottom-actions">
+           <button class="primary" id="btn-study-next-mcq" style="display: none;" onclick="app.handleStudyMcqNext()">Devam Et →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Typing Fill-in-the-blank -->
+      <div id="study-typing-container" style="display: none;">
+        <p style="color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">AŞAMA 2: Boşluğu Doldur</p>
+        <div class="sentence-box" id="study-sentence-typing">
+           <!-- Sentence goes here -->
+        </div>
+        
+        <div class="typing-container">
+          <div class="feedback-msg" id="typing-feedback"></div>
+          <input type="text" class="typing-input" id="typing-input" placeholder="Kelimeyi tam olarak yazın..." autocomplete="off" spellcheck="false" />
+          
+          <!-- Hungarian Keyboard -->
+          <div class="keyboard-row">
+            <button class="key-btn" onclick="app.typeChar('ö')">ö</button>
+            <button class="key-btn" onclick="app.typeChar('ü')">ü</button>
+            <button class="key-btn" onclick="app.typeChar('ó')">ó</button>
+            <button class="key-btn" onclick="app.typeChar('ő')">ő</button>
+            <button class="key-btn" onclick="app.typeChar('ú')">ú</button>
+            <button class="key-btn" onclick="app.typeChar('ű')">ű</button>
+            <button class="key-btn" onclick="app.typeChar('á')">á</button>
+            <button class="key-btn" onclick="app.typeChar('é')">é</button>
+            <button class="key-btn" onclick="app.typeChar('í')">í</button>
+          </div>
+
+          <button class="primary" onclick="app.handleTypingSubmit()" id="btn-submit-typing" style="width: 100%; max-width: 400px; padding: 1rem;">Kontrol Et</button>
+          <button class="primary" onclick="app.handleStudyTypingNext()" id="btn-next-typing" style="width: 100%; max-width: 400px; padding: 1rem; display: none;">Sonraki Kelime →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: TEST (Final 20 Questions) -->
+    <div id="view-test" class="view">
+      <div class="test-header">
+        <button onclick="app.showView('menu')">← Çıkış</button>
+        <div>
+          <span style="color: var(--text-muted);">Soru:</span>
+          <strong id="test-q-counter" style="margin-left: 0.5rem; font-size: 1.1rem;">1/20</strong>
+        </div>
+        <div style="font-weight: 600; font-variant-numeric: tabular-nums;" id="test-timer">05:00</div>
+      </div>
+      <div id="test-timer-warning" style="display:none; color: var(--accent-failure); text-align: center; margin-bottom: 1rem; font-weight:bold;">Süre doldu! Lütfen en kısa sürede bitirmeye çalışın.</div>
+
+      <div class="sentence-box" id="test-question-box" style="text-align: center;">
+         <!-- Question e.g. What is the meaning of X ? -->
+      </div>
+      <div class="options-grid" id="test-options">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div class="bottom-actions">
+        <button class="primary" onclick="app.handleTestNext()" id="btn-test-next" style="display:none;">Sıradaki Soru →</button>
+      </div>
+    </div>
+
+    <!-- VIEW: RESULTS -->
+    <div id="view-result" class="view">
+      <div class="typing-container" style="background: var(--bg-secondary); padding: 4rem 2rem;">
+        <div class="result-stars" id="result-stars">
+          <span>★</span><span>★</span><span>★</span>
+        </div>
+        <h2 style="font-size: 2rem; margin-bottom: 1rem;" id="result-title">Test Tamamlandı!</h2>
+        <p style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;" id="result-score">20 sorudan 18 tanesini doğru bildiniz.</p>
+        <p id="result-message" style="margin-bottom: 2rem; color: var(--text-muted);"></p>
+        <button onclick="app.showView('menu')">İçindekiler'e Dön</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * DATABASE: VOCABULARY
+     * {word} will be targeted in example_sentence.
+     */
+    const VOCABULARY = [
+      // Topic 1: Politika és Társadalom (Politics & Society)
+      { id: 1, word: "Sarkalatos", translation: "Hayati / Kilit", topic: "Politika és Társadalom", stage: 1, 
+        example_sentence: "A kölcsönös bizalom megléte {word} pontja a társadalmi békének Európában." },
+      { id: 2, word: "Szankció", translation: "Yaptırım", topic: "Politika és Társadalom", stage: 1, 
+        example_sentence: "Az ENSZ Biztonsági Tanácsa komoly {word} bevezetéséről döntött az agresszor ország ellen." },
+      { id: 3, word: "Hegemónia", translation: "Hegemonya", topic: "Politika és Társadalom", stage: 1, 
+        example_sentence: "A nagyhatalmak globális {word} kiépítésére törekszenek a 21. századi világrendben." },
+      { id: 4, word: "Bilaterális", translation: "İkili", topic: "Politika és Társadalom", stage: 1, 
+        example_sentence: "A két államfő sikeres {word} tárgyalásokat folytatott a gazdasági együttműködésről." },
+      { id: 5, word: "Szuverenitás", translation: "Egemenlik", topic: "Politika és Társadalom", stage: 1, 
+        example_sentence: "Egy független állam legfőbb jellemzője a teljes területi és politikai {word}." },
+
+      // Topic 2: Tudomány és Technológia (Science & Technology)
+      { id: 6, word: "Kriptográfia", translation: "Şifreleme bilimi", topic: "Tudomány és Technológia", stage: 1, 
+        example_sentence: "A modern {word} alapjai elengedhetetlenek a biztonságos digitális kommunikációhoz." },
+      { id: 7, word: "Kiberbiztonság", translation: "Siber güvenlik", topic: "Tudomány és Technológia", stage: 1, 
+        example_sentence: "A {word} fejlesztése kiemelt prioritás a nemzetközi nagyvállalatok számára." },
+      { id: 8, word: "Interfész", translation: "Arayüz", topic: "Tudomány és Technológia", stage: 1, 
+        example_sentence: "A szoftver új rendszere egy sokkal letisztultabb felhasználói {word} designnal rendelkezik." },
+      { id: 9, word: "Prediktív", translation: "Öngörülü / Tahmini", topic: "Tudomány és Technológia", stage: 1, 
+        example_sentence: "A gépi tanulás algoritmusai kiválóan alkalmasak {word} elemzések készítésére." },
+      { id: 10, word: "Heurisztika", translation: "Sezgisel yöntem", topic: "Tudomány és Technológia", stage: 1, 
+        example_sentence: "Az emberi agy gyakran {word} segítségével oldja meg a komplex problémákat időhiány esetén." },
+
+      // Topic 3: Filozófia és Bioetika (Philosophy & Bioethics)
+      { id: 11, word: "Eutanázia", translation: "Ötanazi", topic: "Filozófia és Bioetika", stage: 1, 
+        example_sentence: "Az aktív {word} legalizálása továbbra is rendkívül megosztó kérdés a társadalomban." },
+      { id: 12, word: "Bioetika", translation: "Biyoetik", topic: "Filozófia és Bioetika", stage: 1, 
+        example_sentence: "A modern orvostudomány rohamos fejlődése komoly {word} dilemmákat vet fel." },
+      { id: 13, word: "Eugenika", translation: "Öjeni", topic: "Filozófia és Bioetika", stage: 1, 
+        example_sentence: "A történelem során az {word} alkalmazása katasztrofális emberi jogi visszaélésekhez vezetett." },
+      { id: 14, word: "Genomika", translation: "Genomik", topic: "Filozófia és Bioetika", stage: 1, 
+        example_sentence: "A {word} forradalma lehetővé tette a személyre szabott orvoslás kialakulását." },
+      { id: 15, word: "Autonómia", translation: "Özerklik", topic: "Filozófia és Bioetika", stage: 1, 
+        example_sentence: "A betegek {word} tiszteletben tartása az orvosi etika egyik legfontosabb alapelve." },
+
+      // Topic 4: Általános elvont fogalmak (General abstract concepts)
+      { id: 16, word: "Adekvát", translation: "Uygun / Yeterli", topic: "Általános elvont fogalmak", stage: 1, 
+        example_sentence: "Erre a rendkívül bonyolult problémára sajnos nincs egyetlen {word} válasz." },
+      { id: 17, word: "Resziliens", translation: "Dirençli / Esnek", topic: "Általános elvont fogalmak", stage: 1, 
+        example_sentence: "A gazdasági válságok megmutatták, mennyire {word} a nemzetközi ellátási lánc." },
+      { id: 18, word: "Holisztikus", translation: "Bütüncül", topic: "Általános elvont fogalmak", stage: 1, 
+        example_sentence: "A pszichológiában ma már egyre elterjedtebb a páciensek {word} szemléletű kezelése." },
+      { id: 19, word: "Pragmatikus", translation: "Faydacı / Gerçekçi", topic: "Általános elvont fogalmak", stage: 1, 
+        example_sentence: "A politikus ideológiai viták helyett egy sokkal {word} megoldást javasolt." },
+      { id: 20, word: "Doktrína", translation: "Doktrin", topic: "Általános elvont fogalmak", stage: 1, 
+        example_sentence: "Az új katonai {word} a kiberhadviselésre helyezi a legnagyobb hangsúlyt." }
+    ];
+
+    const STAGE_SIZE = 100;
+    const REQUIRED_STARS = 2;
+    const TEST_DURATION = 300; // 5 mins
+
+    // Extract unique topics for menu
+    const TOPICS = [...new Set(VOCABULARY.map(w => w.topic))];
+
+    const app = {
+      state: {
+        completedTopics: [], // Array of completed topic names
+        stageScores: {}, // { 1: stars }
+        
+        // Contextual Study State
+        currentTopic: null,
+        studyWords: [],
+        studyWordIndex: 0,
+        currentStudyWord: null,
+
+        // Test State
+        testQuestions: [],
+        currentTestIndex: 0,
+        correctAnswersCount: 0,
+        timerInterval: null,
+        timeLeft: 0,
+        isTestAnswered: false,
+      },
+
+      init() {
+        this.loadProgress();
+        this.renderMenu();
+        
+        // Listen to Enter key on typing input
+        document.getElementById('typing-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.handleTypingSubmit();
+        });
+      },
+
+      loadProgress() {
+        try {
+          const raw = localStorage.getItem('c2masterclass_v2_progress');
+          if (raw) {
+            const data = JSON.parse(raw);
+            this.state.completedTopics = data.completedTopics || [];
+            this.state.stageScores = data.stageScores || {};
+          }
+        } catch (e) {
+          console.error("Failed to load progress", e);
+        }
+      },
+
+      saveProgress() {
+        localStorage.setItem('c2masterclass_v2_progress', JSON.stringify({
+          completedTopics: this.state.completedTopics,
+          stageScores: this.state.stageScores
+        }));
+      },
+
+      showView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        if (viewId === 'menu') {
+          this.renderMenu();
+        }
+      },
+
+      /**
+       * ========================
+       * MENU (İÇİNDEKİLER)
+       * ========================
+       */
+      renderMenu() {
+        const list = document.getElementById('topic-list');
+        list.innerHTML = '';
+
+        TOPICS.forEach((topicName, idx) => {
+          const isDone = this.state.completedTopics.includes(topicName);
+          const totalWords = VOCABULARY.filter(w => w.topic === topicName).length;
+
+          const item = document.createElement('div');
+          item.className = 'topic-item';
+          item.innerHTML = `
+            <div class="topic-info">
+              <h3>Bölüm ${idx + 1}: ${topicName}</h3>
+              <p>${totalWords} Kelime</p>
+            </div>
+            <div class="topic-status ${isDone ? 'status-done' : 'status-pending'}">
+              ${isDone ? 'Tamamlandı ✓' : 'Çalışmaya Başla'}
+            </div>
+          `;
+          item.onclick = () => this.startStudyTopic(topicName);
+          list.appendChild(item);
+        });
+      },
+
+      /**
+       * ========================
+       * STUDY MECHANIC 
+       * (Step 1: MCQ, Step 2: Typing)
+       * ========================
+       */
+      startStudyTopic(topicName) {
+        this.state.currentTopic = topicName;
+        this.state.studyWords = VOCABULARY.filter(w => w.topic === topicName);
+        this.state.studyWordIndex = 0;
+        this.loadStudyWord();
+        this.showView('study');
+      },
+
+      loadStudyWord() {
+        const idx = this.state.studyWordIndex;
+        const total = this.state.studyWords.length;
+        
+        if (idx >= total) {
+          // Finished topic
+          if (!this.state.completedTopics.includes(this.state.currentTopic)) {
+            this.state.completedTopics.push(this.state.currentTopic);
+            this.saveProgress();
+          }
+          alert(`Tebrikler! "${this.state.currentTopic}" konusunu tamamladınız.`);
+          this.showView('menu');
+          return;
+        }
+
+        document.getElementById('study-progress').textContent = `${idx + 1}/${total}`;
+        this.state.currentStudyWord = this.state.studyWords[idx];
+        
+        // Show MCQ step first
+        this.setupStudyMcq();
+      },
+
+      /** STEP 1: Contextual MCQ */
+      setupStudyMcq() {
+        document.getElementById('study-typing-container').style.display = 'none';
+        document.getElementById('study-mcq-container').style.display = 'block';
+        document.getElementById('btn-study-next-mcq').style.display = 'none';
+        
+        const cw = this.state.currentStudyWord;
+        
+        // Replace {word} with a blank
+        const sentenceHTML = cw.example_sentence.replace('{word}', `<span class="blank-word">_____</span>`);
+        document.getElementById('study-sentence-mcq').innerHTML = sentenceHTML;
+
+        // Generate 4 options (1 correct, 3 wrong from entire DB)
+        const wrongWords = VOCABULARY.filter(w => w.id !== cw.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+        const options = [...wrongWords, cw].sort(() => 0.5 - Math.random());
+
+        const grid = document.getElementById('study-options');
+        grid.innerHTML = '';
+        
+        options.forEach((opt) => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.translation;
+          btn.onclick = (e) => this.evalStudyMcq(e.target, opt.id === cw.id, options, cw.id);
+          grid.appendChild(btn);
+        });
+      },
+
+      evalStudyMcq(clickedBtn, isCorrect, optionsData, correctId) {
+        // Disable all buttons to prevent re-clicks
+        const btns = document.querySelectorAll('#study-options .option-btn');
+        btns.forEach(b => b.disabled = true);
+
+        if (isCorrect) {
+          clickedBtn.classList.add('correct');
+        } else {
+          clickedBtn.classList.add('wrong');
+          // Highlight the right one
+          btns.forEach((b, idx) => {
+            if (optionsData[idx].id === correctId) b.classList.add('correct');
+          });
+        }
+        
+        document.getElementById('btn-study-next-mcq').style.display = 'block';
+      },
+
+      handleStudyMcqNext() {
+        // Move to Typing Step (Step 2)
+        this.setupStudyTyping();
+      },
+
+      /** STEP 2: Strict Typing fill-in-the-blank */
+      setupStudyTyping() {
+        document.getElementById('study-mcq-container').style.display = 'none';
+        document.getElementById('study-typing-container').style.display = 'block';
+        
+        const cw = this.state.currentStudyWord;
+        const sentenceHTML = cw.example_sentence.replace('{word}', `<span class="blank-word" style="color:var(--text-main);">_____</span>`);
+        document.getElementById('study-sentence-typing').innerHTML = sentenceHTML;
+
+        const input = document.getElementById('typing-input');
+        input.value = '';
+        input.classList.remove('error', 'success');
+        input.disabled = false;
+        
+        document.getElementById('typing-feedback').textContent = '';
+        document.getElementById('typing-feedback').className = 'feedback-msg';
+
+        document.getElementById('btn-submit-typing').style.display = 'block';
+        document.getElementById('btn-next-typing').style.display = 'none';
+        setTimeout(() => input.focus(), 100);
+      },
+
+      typeChar(char) {
+        const input = document.getElementById('typing-input');
+        if (!input.disabled) {
+          // Add character at caret position
+          const start = input.selectionStart;
+          const end = input.selectionEnd;
+          input.value = input.value.substring(0, start) + char + input.value.substring(end);
+          input.setSelectionRange(start + 1, start + 1);
+          input.focus();
+        }
+      },
+
+      handleTypingSubmit() {
+        const input = document.getElementById('typing-input');
+        const feedback = document.getElementById('typing-feedback');
+        if (input.disabled) return;
+
+        const val = input.value.trim();
+        const correctVal = this.state.currentStudyWord.word;
+
+        if (val === correctVal) {
+          // Success
+          input.classList.remove('error');
+          input.classList.add('success');
+          input.disabled = true;
+          feedback.textContent = "Kusursuz! Doğru cevap.";
+          feedback.className = 'feedback-msg success';
+          
+          document.getElementById('btn-submit-typing').style.display = 'none';
+          document.getElementById('btn-next-typing').style.display = 'block';
+        } else {
+          // Error
+          input.classList.remove('success');
+          input.classList.add('error');
+          feedback.textContent = `Yanlış cevap. Lütfen tekrar deneyin.`;
+          feedback.className = 'feedback-msg error';
+          setTimeout(() => input.classList.remove('error'), 400);
+        }
+      },
+
+      handleStudyTypingNext() {
+        this.state.studyWordIndex++;
+        this.loadStudyWord();
+      },
+
+      /**
+       * ========================
+       * FINAL STAGE TEST
+       * ========================
+       */
+      startFinalTest() {
+        // Pick 20 questions (or max available)
+        const qCount = Math.min(VOCABULARY.length, 20);
+        const shuffledWords = [...VOCABULARY].sort(() => 0.5 - Math.random()).slice(0, qCount);
+        
+        this.state.testQuestions = shuffledWords.map(targetWord => {
+          const wrongWords = VOCABULARY.filter(w => w.id !== targetWord.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+          const options = [targetWord, ...wrongWords].sort(() => 0.5 - Math.random());
+          return { testWord: targetWord.word, options, targetId: targetWord.id };
+        });
+
+        this.state.currentTestIndex = 0;
+        this.state.correctAnswersCount = 0;
+        this.state.timeLeft = TEST_DURATION;
+        document.getElementById('test-timer-warning').style.display = 'none';
+        
+        this.startTestTimer();
+        this.renderTestQuestion();
+        this.showView('test');
+      },
+
+      startTestTimer() {
+        clearInterval(this.state.timerInterval);
+        this.updateTestTimerDisplay();
+        this.state.timerInterval = setInterval(() => {
+          this.state.timeLeft--;
+          this.updateTestTimerDisplay();
+          if (this.state.timeLeft <= 0) {
+            clearInterval(this.state.timerInterval);
+            document.getElementById('test-timer-warning').style.display = 'block';
+            document.getElementById('test-timer').style.color = 'var(--accent-failure)';
+          }
+        }, 1000);
+      },
+
+      updateTestTimerDisplay() {
+        const tObj = document.getElementById('test-timer');
+        if (this.state.timeLeft <= 0) {
+          tObj.textContent = "00:00";
+          return;
+        }
+        const m = Math.floor(this.state.timeLeft / 60).toString().padStart(2, '0');
+        const s = (this.state.timeLeft % 60).toString().padStart(2, '0');
+        tObj.textContent = `${m}:${s}`;
+      },
+
+      renderTestQuestion() {
+        this.state.isTestAnswered = false;
+        document.getElementById('btn-test-next').style.display = 'none';
+
+        const idx = this.state.currentTestIndex;
+        const qObj = this.state.testQuestions[idx];
+        
+        document.getElementById('test-q-counter').textContent = `${idx + 1}/${this.state.testQuestions.length}`;
+        // The question asks the translation of the word
+        document.getElementById('test-question-box').innerHTML = `<strong>"${qObj.testWord}"</strong> kelimesinin Türkçe karşılığı nedir?`;
+        
+        const grid = document.getElementById('test-options');
+        grid.innerHTML = '';
+        
+        qObj.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.translation;
+          btn.onclick = (e) => this.evalTestOption(e.target, opt.id === qObj.targetId, qObj.options, qObj.targetId);
+          grid.appendChild(btn);
+        });
+      },
+
+      evalTestOption(clickedBtn, isCorrect, optionsData, correctId) {
+        if (this.state.isTestAnswered) return;
+        this.state.isTestAnswered = true;
+
+        const btns = document.querySelectorAll('#view-test .option-btn');
+        btns.forEach(b => b.disabled = true);
+
+        if (isCorrect) {
+          clickedBtn.classList.add('correct');
+          this.state.correctAnswersCount++;
+        } else {
+          clickedBtn.classList.add('wrong');
+          btns.forEach((b, idx) => {
+            if (optionsData[idx].id === correctId) b.classList.add('correct');
+          });
+        }
+        
+        document.getElementById('btn-test-next').style.display = 'block';
+        if (this.state.currentTestIndex === this.state.testQuestions.length - 1) {
+          document.getElementById('btn-test-next').textContent = "Sınavı Bitir";
+        } else {
+           document.getElementById('btn-test-next').textContent = "Sıradaki Soru →";
+        }
+      },
+
+      handleTestNext() {
+        if (this.state.currentTestIndex < this.state.testQuestions.length - 1) {
+          this.state.currentTestIndex++;
+          this.renderTestQuestion();
+        } else {
+          this.finishFinalTest();
+        }
+      },
+
+      finishFinalTest() {
+        clearInterval(this.state.timerInterval);
+        
+        const total = this.state.testQuestions.length;
+        const correct = this.state.correctAnswersCount;
+        const percentage = (correct / total) * 100;
+        
+        let stars = 0;
+        if (percentage >= 90) stars = 3;
+        else if (percentage >= 70) stars = 2;
+        else if (percentage >= 35) stars = 1;
+        
+        const passed = stars >= REQUIRED_STARS;
+
+        if (stars > (this.state.stageScores[1] || 0)) {
+          this.state.stageScores[1] = stars;
+          this.saveProgress();
+        }
+
+        const starsContainer = document.getElementById('result-stars');
+        starsContainer.innerHTML = '';
+        for (let i = 1; i <= 3; i++) {
+          starsContainer.innerHTML += `<span class="${i <= stars ? 'filled' : ''}">★</span>`;
+        }
+        
+        document.getElementById('result-title').textContent = passed ? "Etap Tamamlandı!" : "Başarısız Oldunuz";
+        document.getElementById('result-title').style.color = passed ? "var(--accent-success)" : "var(--accent-failure)";
+        document.getElementById('result-score').textContent = `${total} sorudan ${correct} tanesini doğru bildiniz.`;
+        document.getElementById('result-message').textContent = passed 
+          ? "Tebrikler! Mükemmel bir iş çıkardınız ve bu etabın son testini başarıyla tamamladınız." 
+          : "Etap testini geçmek için en az 2 yıldıza ihtiyacınız var. Daha sonra tekrar deneyin.";
+
+        this.showView('result');
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => app.init());
+  </script>
+</body>
+</html>

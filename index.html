@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C2 Masterclass: Neon Arcade</title>
+  
+  <!-- Fun Gamified Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* NEON ARCADE THEME */
+    :root {
+      --bg-primary: #0b0c10;
+      --bg-secondary: #1f2833;
+      --bg-tertiary: #192028;
+      
+      --text-main: #c5c6c7;
+      --text-muted: #8e959c;
+      --text-title: #ffffff;
+      
+      --accent-neon: #66fcf1;
+      --accent-neon-dim: #45a29e;
+      --accent-magenta: #ff007f;
+      --accent-magenta-dim: #cc0066;
+      
+      --accent-success: #39ff14;
+      --accent-failure: #ff0000;
+      
+      --font-display: 'Fredoka', sans-serif;
+      --font-body: 'Poppins', sans-serif;
+      
+      --transition-speed: 0.3s;
+      --border-radius: 12px;
+      
+      --box-shadow-neon: 0 0 10px rgba(102, 252, 241, 0.4), 0 0 20px rgba(102, 252, 241, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        linear-gradient(rgba(102, 252, 241, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(102, 252, 241, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    h1, h2, h3 { font-family: var(--font-display); letter-spacing: 1px; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* AUTH MODAL */
+    #auth-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(11, 12, 16, 0.95);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    .auth-modal {
+      background: var(--bg-secondary);
+      padding: 3rem;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--accent-magenta);
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .auth-modal h2 { color: var(--text-title); margin-bottom: 2rem; font-size: 2rem; text-shadow: 0 0 10px var(--accent-magenta); }
+    .input-group { margin-bottom: 1.5rem; text-align: left; }
+    .input-group label { display: block; margin-bottom: 0.5rem; color: var(--accent-neon); font-family: var(--font-display); }
+    .auth-input {
+      width: 100%; padding: 0.75rem; border-radius: var(--border-radius);
+      border: 2px solid var(--accent-neon-dim);
+      background: var(--bg-tertiary); color: var(--text-title);
+      font-family: var(--font-body);
+    }
+    .auth-input:focus { outline: none; border-color: var(--accent-neon); box-shadow: var(--box-shadow-neon); }
+    .btn-auth {
+      width: 100%; padding: 1rem; border-radius: var(--border-radius);
+      background: var(--accent-magenta); color: #fff;
+      font-family: var(--font-display); font-size: 1.2rem;
+      border: none; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; margin-top: 1rem;
+    }
+    .btn-auth:hover { background: var(--accent-magenta-dim); transform: scale(1.05); }
+    .auth-switch { margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+    #auth-error { color: var(--accent-failure); margin-top: 1rem; text-shadow: 0 0 5px var(--accent-failure); font-weight: bold; }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    header h1 {
+      font-size: 3rem;
+      color: var(--text-title);
+      text-shadow: 0 0 15px var(--accent-neon), 0 0 30px var(--accent-neon);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--accent-neon-dim); font-size: 1.2rem; font-family: var(--font-display); }
+
+    /* USER STATS BAR */
+    .user-stats-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-secondary); padding: 1rem 2rem;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--accent-neon-dim);
+      margin-bottom: 2rem;
+    }
+    .user-stats-bar div { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent-neon); }
+    .user-stats-bar button {
+      background: transparent; border: 1px solid var(--accent-magenta); 
+      color: var(--accent-magenta); padding: 0.5rem 1rem; border-radius: 8px;
+      cursor: pointer; transition: 0.2s;
+    }
+    .user-stats-bar button:hover { background: var(--accent-magenta); color: #fff; }
+
+    /* VIEWS */
+    .view { display: none; flex: 1; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .view.active { display: flex; flex-direction: column; }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    button { font-family: var(--font-body); }
+    button.primary-btn {
+      background: var(--accent-neon);
+      color: var(--bg-primary);
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: var(--border-radius);
+      font-size: 1.2rem;
+      font-family: var(--font-display);
+      cursor: pointer;
+      box-shadow: var(--box-shadow-neon);
+      transition: all 0.2s;
+    }
+    button.primary-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 15px var(--accent-neon); }
+    button:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* MENU VIEW & LEADERBOARD */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+    @media(max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--accent-neon-dim);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+    }
+    .panel h2 { color: var(--accent-neon); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+
+    .topic-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem; border: 1px solid var(--border-color);
+      border-radius: 8px; margin-bottom: 1rem;
+      transition: background 0.2s; cursor: pointer;
+    }
+    .topic-item:hover { background: var(--bg-tertiary); border-color: var(--accent-magenta); }
+    .topic-status {
+      font-family: var(--font-display); padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;
+    }
+    .status-done { background: rgba(57, 255, 20, 0.1); color: var(--accent-success); border: 1px solid var(--accent-success); }
+    .status-pending { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+    .final-test-block {
+      background: linear-gradient(135deg, rgba(255,0,127,0.1), rgba(31,40,51,1));
+      border: 1px solid var(--accent-magenta);
+      text-align: center;
+      padding: 2rem; border-radius: var(--border-radius);
+      margin-top: 1rem;
+    }
+
+    .leaderboard-list { list-style: none; }
+    .lb-row {
+      display: flex; justify-content: space-between;
+      padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-family: var(--font-display);
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank-1 { color: #FFD700; text-shadow: 0 0 5px #FFD700; }
+    .lb-rank-2 { color: #C0C0C0; text-shadow: 0 0 5px #C0C0C0; }
+    .lb-rank-3 { color: #CD7F32; text-shadow: 0 0 5px #CD7F32; }
+
+    /* STUDY/TEST BOXES */
+    .study-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .back-btn {
+      background: transparent; border: 1px solid var(--text-muted); color: var(--text-main);
+      padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+    }
+    .back-btn:hover { border-color: var(--accent-neon); color: var(--accent-neon); }
+
+    .sentence-box {
+      background: var(--bg-tertiary); margin-bottom: 2rem;
+      border: 2px dashed var(--accent-magenta);
+      padding: 2.5rem 1.5rem; text-align: center;
+      border-radius: var(--border-radius);
+      font-size: 1.5rem; font-weight: 600;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .blank-word {
+      color: var(--accent-neon); border-bottom: 3px solid var(--accent-neon);
+      display: inline-block; min-width: 120px; margin: 0 0.5rem;
+    }
+
+    /* Options */
+    .options-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .option-btn {
+      background: var(--bg-secondary); border: 2px solid var(--border-color);
+      color: var(--text-main); font-size: 1.2rem; padding: 1.2rem;
+      border-radius: var(--border-radius); cursor: pointer; text-align: left;
+      transition: all 0.2s;
+    }
+    .option-btn:hover:not(:disabled) { border-color: var(--accent-neon); background: var(--bg-tertiary); }
+    .option-btn.correct {
+      background: rgba(57, 255, 20, 0.1); border-color: var(--accent-success); color: var(--accent-success);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.3); text-shadow: 0 0 5px var(--accent-success);
+    }
+    .option-btn.wrong {
+      background: rgba(255, 0, 0, 0.1); border-color: var(--accent-failure); color: var(--accent-failure);
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+    }
+
+    /* Typing */
+    .typing-input {
+      width: 100%; max-width: 400px;
+      background: var(--bg-primary); border: 2px solid var(--accent-neon);
+      color: var(--accent-neon); font-size: 1.5rem; padding: 1rem;
+      border-radius: 8px; text-align: center; margin-bottom: 1rem;
+      font-family: var(--font-display); outline: none; box-shadow: var(--box-shadow-neon);
+    }
+    .typing-input.error { border-color: var(--accent-failure); color: var(--accent-failure); box-shadow: 0 0 10px var(--accent-failure); animation: shake 0.4s; }
+    .typing-input.success { border-color: var(--accent-success); color: var(--accent-success); box-shadow: 0 0 10px var(--accent-success); }
+    
+    .keyboard-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .key-btn {
+      background: var(--bg-secondary); border: 1px solid var(--accent-magenta);
+      color: var(--text-main); font-family: var(--font-display);
+      padding: 0.8rem 1.2rem; font-size: 1.2rem; border-radius: 8px;
+      cursor: pointer; transition: 0.2s;
+    }
+    .key-btn:hover { background: var(--accent-magenta); color: #fff; box-shadow: 0 0 10px var(--accent-magenta); }
+
+    .bottom-actions { display: flex; justify-content: center; }
+
+    /* Results */
+    .result-stars { font-size: 4rem; color: var(--border-color); display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    .result-stars span.filled { color: #FFD700; text-shadow: 0 0 20px #FFD700; animation: popStar 0.5s forwards; opacity: 0; transform: scale(0.5); }
+    .result-stars span.filled:nth-child(1) { animation-delay: 0.1s; }
+    .result-stars span.filled:nth-child(2) { animation-delay: 0.3s; }
+    .result-stars span.filled:nth-child(3) { animation-delay: 0.5s; }
+
+    @keyframes popStar { to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body>
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="auth-overlay">
+    <div class="auth-modal">
+      <h2 id="auth-title">ARCADE<br>LOGIN</h2>
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="auth-username" class="auth-input" placeholder="Player1">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" class="auth-input" placeholder="••••••••">
+      </div>
+      <button class="btn-auth" id="btn-auth-submit" onclick="app.submitAuth()">START GAME</button>
+      <div class="auth-switch" onclick="app.toggleAuthMode()" id="auth-switch-text">New player? Register here.</div>
+      <div id="auth-error"></div>
+    </div>
+  </div>
+
+  <div class="container" id="app-container" style="display:none;">
+    <header>
+      <h1>NEON MASTERCLASS</h1>
+      <p class="subtitle">Hungarian-Turkish Stage 1</p>
+    </header>
+
+    <div class="user-stats-bar">
+      <div>PLAYER: <span id="ui-username" style="color:#fff;">---</span></div>
+      <div>SCORE: <span id="ui-score" style="color:var(--accent-success);">0</span></div>
+      <div>STARS: <span id="ui-stars" style="color:#FFD700;">0</span></div>
+      <button onclick="app.logout()">LOGOUT</button>
+    </div>
+
+    <!-- VIEW: MENU -->
+    <div id="view-menu" class="view active">
+      <div class="dashboard-grid">
+        <!-- LEFT: Topics -->
+        <div class="panel">
+          <h2>LEVELS (Öğrenme Konuları)</h2>
+          <div id="topic-list"></div>
+          
+          <div class="final-test-block">
+            <h3 style="color:var(--accent-neon); margin-bottom:1rem; font-size:1.5rem;">BOSS BATTLE (Final Test)</h3>
+            <p style="color:var(--text-main); margin-bottom:2rem;">20 Soru. Hazır mısın?</p>
+            <button class="primary-btn" onclick="app.startFinalTest()">BAŞLA!</button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Leaderboard -->
+        <div class="panel">
+          <h2>TOP PLAYERS</h2>
+          <div id="lb-loading" style="color:var(--text-muted); font-size:0.9rem;">Yükleniyor...</div>
+          <ul class="leaderboard-list" id="leaderboard-list">
+            <!-- Populated via Supabase -->
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: STUDY -->
+    <div id="view-study" class="view">
+      <div class="study-header">
+        <button class="back-btn" onclick="app.showMenu()">← Çıkış</button>
+        <div style="font-family: var(--font-display); color: var(--text-muted);">
+          KELİME: <strong id="study-progress" style="color: var(--accent-neon);">1/5</strong>
+        </div>
+      </div>
+
+      <!-- Step 1: MCQ -->
+      <div id="study-mcq-container">
+        <div class="sentence-box" id="study-sentence-mcq"></div>
+        <div class="options-grid" id="study-options"></div>
+        <div class="bottom-actions">
+           <button class="primary-btn" id="btn-study-next-mcq" style="display: none;" onclick="app.handleStudyMcqNext()">DEVAM ET</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Typing -->
+      <div id="study-typing-container" style="display: none;">
+        <div class="sentence-box" id="study-sentence-typing"></div>
+        <div style="text-align: center;">
+          <div class="feedback-msg" id="typing-feedback"></div>
+          <input type="text" class="typing-input" id="typing-input" autocomplete="off" spellcheck="false" />
+          
+          <div class="keyboard-row">
+            <button class="key-btn" onclick="app.typeChar('ö')">ö</button>
+            <button class="key-btn" onclick="app.typeChar('ü')">ü</button>
+            <button class="key-btn" onclick="app.typeChar('ó')">ó</button>
+            <button class="key-btn" onclick="app.typeChar('ő')">ő</button>
+            <button class="key-btn" onclick="app.typeChar('ú')">ú</button>
+            <button class="key-btn" onclick="app.typeChar('ű')">ű</button>
+            <button class="key-btn" onclick="app.typeChar('á')">á</button>
+            <button class="key-btn" onclick="app.typeChar('é')">é</button>
+            <button class="key-btn" onclick="app.typeChar('í')">í</button>
+          </div>
+
+          <button class="primary-btn" onclick="app.handleTypingSubmit()" id="btn-submit-typing">KONTROL ET</button>
+          <button class="primary-btn" onclick="app.handleStudyTypingNext()" id="btn-next-typing" style="display:none; background:var(--accent-success);">SONRAKİ KELİME</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: TEST -->
+    <div id="view-test" class="view">
+      <div class="study-header">
+        <button class="back-btn" onclick="app.showMenu()">← Vazgeç</button>
+        <div style="font-family:var(--font-display); color:var(--text-muted);">
+          SORU: <strong id="test-q-counter" style="color:var(--accent-neon);">1/20</strong>
+        </div>
+        <div style="font-family:var(--font-display); color:var(--accent-magenta); font-size:1.2rem;" id="test-timer">05:00</div>
+      </div>
+      <div id="test-timer-warning" style="display:none; color:var(--accent-failure); text-align:center; margin-bottom:1rem; font-weight:bold;">ZAMAN DOLDU! HIZLAN!</div>
+
+      <div class="sentence-box" id="test-question-box" style="border-color:var(--accent-neon);"></div>
+      <div class="options-grid" id="test-options"></div>
+
+      <div class="bottom-actions">
+        <button class="primary-btn" onclick="app.handleTestNext()" id="btn-test-next" style="display:none;">SIRADAKİ SORU</button>
+      </div>
+    </div>
+
+    <!-- VIEW: RESULTS -->
+    <div id="view-result" class="view">
+      <div class="panel" style="text-align: center; padding: 4rem 2rem;">
+        <div class="result-stars" id="result-stars"><span>★</span><span>★</span><span>★</span></div>
+        <h2 style="font-size:3rem; margin-bottom:1rem; color:var(--text-title);" id="result-title">STAGE CLEARED!</h2>
+        <p style="font-size:1.5rem; color:var(--accent-neon); margin-bottom:2rem;" id="result-score">20/20 Doğru</p>
+        <p id="result-message" style="margin-bottom:2rem; color:var(--text-muted);"></p>
+        <button class="primary-btn" onclick="app.showMenu()">MENÜYE DÖN</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * SUPABASE CONFIGURATION
+     * IMPORTANT: Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY 
+     * with your actual Supabase project credentials.
+     */
+    const SUPABASE_URL = 'https://isdzgorfooyqbiscfbvf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZHpnb3Jmb295cWJpc2NmYnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTQ1OTEsImV4cCI6MjA5MDAzMDU5MX0.qouX6ulLt9oLOGdMRmfBcX5WezlZUkmEXflgtwxa5qQ';
+    
+    // Initialize Supabase only if keys are provided (to prevent crashing UI if user hasn't set them yet)
+    let supabase = null;
+    if (SUPABASE_URL !== 'YOUR_SUPABASE_URL_HERE') {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    const VOCABULARY = [
+      { id: 1, word: "Sarkalatos", translation: "Hayati / Kilit", topic: "Politika és Társadalom", stage: 1, example_sentence: "A bizalom megléte {word} pontja a békének." },
+      { id: 2, word: "Szankció", translation: "Yaptırım", topic: "Politika és Társadalom", stage: 1, example_sentence: "Az ENSZ komoly {word} bevezetéséről döntött." },
+      { id: 3, word: "Hegemónia", translation: "Hegemonya", topic: "Politika és Társadalom", stage: 1, example_sentence: "A nagyhatalmak globális {word} kiépítésére törekszenek." },
+      { id: 4, word: "Bilaterális", translation: "İkili", topic: "Politika és Társadalom", stage: 1, example_sentence: "A két államfő sikeres {word} tárgyalásokat folytatott." },
+      { id: 5, word: "Szuverenitás", translation: "Egemenlik", topic: "Politika és Társadalom", stage: 1, example_sentence: "A független állam legfőbb jellemzője a {word}." },
+
+      { id: 6, word: "Kriptográfia", translation: "Şifreleme bilimi", topic: "Tudomány és Technológia", stage: 1, example_sentence: "A modern {word} alapjai elengedhetetlenek." },
+      { id: 7, word: "Kiberbiztonság", translation: "Siber güvenlik", topic: "Tudomány és Technológia", stage: 1, example_sentence: "A {word} fejlesztése kiemelt prioritás." },
+      { id: 8, word: "Interfész", translation: "Arayüz", topic: "Tudomány és Technológia", stage: 1, example_sentence: "A szoftver új {word} designnal rendelkezik." },
+      { id: 9, word: "Prediktív", translation: "Öngörülü / Tahmini", topic: "Tudomány és Technológia", stage: 1, example_sentence: "A gépi tanulás alkalmas {word} elemzésekre." },
+      { id: 10, word: "Heurisztika", translation: "Sezgisel yöntem", topic: "Tudomány és Technológia", stage: 1, example_sentence: "Az agy gyakran {word} segítségével old meg problémákat." },
+
+      { id: 11, word: "Eutanázia", translation: "Ötanazi", topic: "Filozófia és Bioetika", stage: 1, example_sentence: "Az aktív {word} legalizálása megosztó kérdés." },
+      { id: 12, word: "Bioetika", translation: "Biyoetik", topic: "Filozófia és Bioetika", stage: 1, example_sentence: "A fejlett orvostudomány {word} dilemmákat vet fel." },
+      { id: 13, word: "Eugenika", translation: "Öjeni", topic: "Filozófia és Bioetika", stage: 1, example_sentence: "Az {word} alkalmazása katasztrófához vezetett." },
+      { id: 14, word: "Genomika", translation: "Genomik", topic: "Filozófia és Bioetika", stage: 1, example_sentence: "A {word} forradalma lehetővé tette a személyre szabást." },
+      { id: 15, word: "Autonómia", translation: "Özerklik", topic: "Filozófia és Bioetika", stage: 1, example_sentence: "A betegek {word} tiszteletben tartása fontos." },
+
+      { id: 16, word: "Adekvát", translation: "Uygun / Yeterli", topic: "Általános", stage: 1, example_sentence: "Erre nincs egyetlen {word} válasz." },
+      { id: 17, word: "Resziliens", translation: "Dirençli / Esnek", topic: "Általános", stage: 1, example_sentence: "A válságok megmutatták mennyire {word} a lánc." },
+      { id: 18, word: "Holisztikus", translation: "Bütüncül", topic: "Általános", stage: 1, example_sentence: "Ma már elterjedt a {word} szemléletű kezelés." },
+      { id: 19, word: "Pragmatikus", translation: "Faydacı / Gerçekçi", topic: "Általános", stage: 1, example_sentence: "A politikus egy nagyon {word} megoldást javasolt." },
+      { id: 20, word: "Doktrína", translation: "Doktrin", topic: "Általános", stage: 1, example_sentence: "Az új katonai {word} a kiberhadviselésen alapul." }
+    ];
+
+    const TOPICS = [...new Set(VOCABULARY.map(w => w.topic))];
+
+    const app = {
+      user: null, // Supabase Auth user record
+      dbUser: { username: '', score: 0, stars: 0 },
+      isLoginMode: true,
+
+      state: {
+        completedTopics: [],
+        currentTopic: null,
+        studyWords: [],
+        studyWordIndex: 0,
+        currentStudyWord: null,
+
+        testQuestions: [],
+        currentTestIndex: 0,
+        correctAnswersCount: 0,
+        timerInterval: null,
+        timeLeft: 0,
+        isTestAnswered: false,
+      },
+
+      async init() {
+        // Remove dummy initialization if Supabase is properly linked
+        if (!supabase) {
+          // Dev mock bypass if keys aren't set
+          document.getElementById('auth-overlay').style.display = 'none';
+          document.getElementById('app-container').style.display = 'flex';
+          this.dbUser = { username: 'GuestPlayer', score: 0, stars: 0 };
+          this.updateUserStats();
+          this.renderMenu();
+          return;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await this.handleUserLogin(session.user);
+        } else {
+          document.getElementById('auth-overlay').style.display = 'flex';
+          document.getElementById('app-container').style.display = 'none';
+        }
+
+        document.getElementById('typing-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.handleTypingSubmit();
+        });
+      },
+
+      // ======= AUTH LOGIC =======
+      toggleAuthMode() {
+        this.isLoginMode = !this.isLoginMode;
+        document.getElementById('auth-title').innerHTML = this.isLoginMode ? "ARCADE<br>LOGIN" : "REGISTER<br>NEW PLAYER";
+        document.getElementById('btn-auth-submit').textContent = this.isLoginMode ? "START GAME" : "CREATE ACCOUNT";
+        document.getElementById('auth-switch-text').textContent = this.isLoginMode ? "New player? Register here." : "Already have an account? Login.";
+        document.getElementById('auth-error').textContent = "";
+      },
+
+      async submitAuth() {
+        if (!supabase) return alert("Supabase keys are not configured in index.html!");
+        
+        const username = document.getElementById('auth-username').value.trim();
+        const pwd = document.getElementById('auth-password').value;
+        const errObj = document.getElementById('auth-error');
+        errObj.textContent = "Loading...";
+
+        if (!username || !pwd) { errObj.textContent = "Please enter both username and password."; return; }
+        
+        // Use fake email trick for Supabase Auth
+        const email = `${username.toLowerCase()}@c2masterclass.local`;
+
+        if (this.isLoginMode) {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+          if (error) { errObj.textContent = error.message; } 
+          else { errObj.textContent = ""; await this.handleUserLogin(data.user); }
+        } else {
+          const { data, error } = await supabase.auth.signUp({ email, password: pwd, options: { data: { username } } });
+          if (error) { errObj.textContent = error.message; }
+          else {
+            // Insert initial record in leaderboard
+            await supabase.from('leaderboard').insert([{ user_id: data.user.id, username, score: 0, stars: 0 }]);
+            errObj.textContent = ""; 
+            await this.handleUserLogin(data.user);
+          }
+        }
+      },
+
+      async handleUserLogin(user) {
+        this.user = user;
+        // Fetch user from Leaderboard
+        const { data, error } = await supabase.from('leaderboard').select('*').eq('user_id', user.id).single();
+        if (data) {
+           this.dbUser = { username: data.username, score: data.score, stars: data.stars };
+        } else {
+           this.dbUser = { username: user.user_metadata?.username || 'Player', score: 0, stars: 0 };
+        }
+        
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        this.updateUserStats();
+        this.loadLocalProgress(); // For topic completion (could also move to Supabase, keeping simple here)
+        this.renderMenu();
+        this.fetchLeaderboard();
+      },
+
+      async logout() {
+        if(supabase) await supabase.auth.signOut();
+        window.location.reload();
+      },
+
+      updateUserStats() {
+        document.getElementById('ui-username').textContent = this.dbUser.username;
+        document.getElementById('ui-score').textContent = this.dbUser.score;
+        document.getElementById('ui-stars').textContent = this.dbUser.stars;
+      },
+
+      async addPointsAndSave(pointsGained, starsGained) {
+        this.dbUser.score += pointsGained;
+        this.dbUser.stars = Math.max(this.dbUser.stars, starsGained); // Keep highest stage stars
+        this.updateUserStats();
+        
+        if (supabase && this.user) {
+           await supabase.from('leaderboard').update({ score: this.dbUser.score, stars: this.dbUser.stars }).eq('user_id', this.user.id);
+           this.fetchLeaderboard();
+        }
+      },
+
+      async fetchLeaderboard() {
+        if (!supabase) return;
+        const list = document.getElementById('leaderboard-list');
+        const { data, error } = await supabase.from('leaderboard').select('username, score, stars').order('score', { ascending: false }).limit(10);
+        
+        document.getElementById('lb-loading').style.display = 'none';
+        list.innerHTML = '';
+        if (data) {
+          data.forEach((l, idx) => {
+            const row = document.createElement('li');
+            row.className = `lb-row ${idx < 3 ? 'lb-rank-'+(idx+1) : ''}`;
+            row.innerHTML = `<span>#${idx+1} ${l.username} ${idx===0?'👑':''}</span> <span>${l.score} PTS</span>`;
+            list.appendChild(row);
+          });
+        }
+      },
+
+      loadLocalProgress() {
+        try {
+          const raw = localStorage.getItem('c2_neon_topics_'+this.dbUser.username);
+          if (raw) this.state.completedTopics = JSON.parse(raw);
+        } catch(e){}
+      },
+
+      saveLocalProgress() {
+        localStorage.setItem('c2_neon_topics_'+this.dbUser.username, JSON.stringify(this.state.completedTopics));
+      },
+
+      showMenu() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-menu').classList.add('active');
+        this.renderMenu();
+      },
+
+      // ======= MENU & TOPICS =======
+      renderMenu() {
+        const list = document.getElementById('topic-list');
+        list.innerHTML = '';
+        TOPICS.forEach((topicName, idx) => {
+          const isDone = this.state.completedTopics.includes(topicName);
+          const item = document.createElement('div');
+          item.className = 'topic-item';
+          item.innerHTML = `
+            <div>
+              <h3 style="color:var(--text-title); font-size:1.1rem; font-family:var(--font-display);">Level ${idx+1}: ${topicName}</h3>
+              <p style="color:var(--text-muted); font-size:0.85rem;">5 Words</p>
+            </div>
+            <div class="topic-status ${isDone ? 'status-done' : 'status-pending'}">${isDone ? 'CLEARED' : 'PLAY'}</div>
+          `;
+          item.onclick = () => this.startStudyTopic(topicName);
+          list.appendChild(item);
+        });
+      },
+
+      startStudyTopic(topicName) {
+        this.state.currentTopic = topicName;
+        this.state.studyWords = VOCABULARY.filter(w => w.topic === topicName);
+        this.state.studyWordIndex = 0;
+        this.loadStudyWord();
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-study').classList.add('active');
+      },
+
+      loadStudyWord() {
+        const idx = this.state.studyWordIndex;
+        if (idx >= this.state.studyWords.length) {
+          if (!this.state.completedTopics.includes(this.state.currentTopic)) {
+            this.state.completedTopics.push(this.state.currentTopic);
+            this.saveLocalProgress();
+            this.addPointsAndSave(50, 0); // Bonus for finishing a topic
+          }
+          alert(`LEVEL CLEARED: ${this.state.currentTopic} \n+50 SCORE!`);
+          this.showMenu();
+          return;
+        }
+        document.getElementById('study-progress').textContent = `${idx + 1}/${this.state.studyWords.length}`;
+        this.state.currentStudyWord = this.state.studyWords[idx];
+        this.setupStudyMcq();
+      },
+
+      // STUDY MCQ
+      setupStudyMcq() {
+        document.getElementById('study-typing-container').style.display = 'none';
+        document.getElementById('study-mcq-container').style.display = 'block';
+        document.getElementById('btn-study-next-mcq').style.display = 'none';
+        
+        const cw = this.state.currentStudyWord;
+        document.getElementById('study-sentence-mcq').innerHTML = cw.example_sentence.replace('{word}', `<span class="blank-word">_____</span>`);
+
+        const wrongWords = VOCABULARY.filter(w => w.id !== cw.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+        const options = [...wrongWords, cw].sort(() => 0.5 - Math.random());
+
+        const grid = document.getElementById('study-options');
+        grid.innerHTML = '';
+        options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.translation;
+          btn.onclick = (e) => this.evalStudyMcq(e.target, opt.id === cw.id, options, cw.id);
+          grid.appendChild(btn);
+        });
+      },
+
+      evalStudyMcq(btn, isCorrect, optionsData, correctId) {
+        document.querySelectorAll('#study-options .option-btn').forEach(b => b.disabled = true);
+        if (isCorrect) {
+          btn.classList.add('correct');
+          this.addPointsAndSave(5, 0); // +5 per correct MCQ
+        } else {
+          btn.classList.add('wrong');
+          document.querySelectorAll('#study-options .option-btn').forEach((b, i) => {
+            if (optionsData[i].id === correctId) b.classList.add('correct');
+          });
+        }
+        document.getElementById('btn-study-next-mcq').style.display = 'block';
+      },
+
+      handleStudyMcqNext() { this.setupStudyTyping(); },
+
+      // STUDY TYPING
+      setupStudyTyping() {
+        document.getElementById('study-mcq-container').style.display = 'none';
+        document.getElementById('study-typing-container').style.display = 'block';
+        
+        const cw = this.state.currentStudyWord;
+        document.getElementById('study-sentence-typing').innerHTML = cw.example_sentence.replace('{word}', `<span class="blank-word">_____</span>`);
+        
+        const input = document.getElementById('typing-input');
+        input.value = ''; input.classList.remove('error', 'success'); input.disabled = false;
+        
+        document.getElementById('typing-feedback').textContent = '';
+        document.getElementById('btn-submit-typing').style.display = 'inline-block';
+        document.getElementById('btn-next-typing').style.display = 'none';
+        setTimeout(() => input.focus(), 100);
+      },
+
+      typeChar(char) {
+        const input = document.getElementById('typing-input');
+        if (!input.disabled) {
+          const start = input.selectionStart;
+          input.value = input.value.substring(0, start) + char + input.value.substring(input.selectionEnd);
+          input.setSelectionRange(start + 1, start + 1);
+          input.focus();
+        }
+      },
+
+      handleTypingSubmit() {
+        const input = document.getElementById('typing-input');
+        if (input.disabled) return;
+        const val = input.value.trim();
+        const correctVal = this.state.currentStudyWord.word;
+
+        if (val === correctVal) {
+          input.classList.add('success'); input.classList.remove('error'); input.disabled = true;
+          document.getElementById('typing-feedback').textContent = "PERFECT!";
+          document.getElementById('typing-feedback').className = 'feedback-msg success';
+          document.getElementById('btn-submit-typing').style.display = 'none';
+          document.getElementById('btn-next-typing').style.display = 'inline-block';
+          this.addPointsAndSave(10, 0); // +10 per correct spelling
+        } else {
+          input.classList.add('error');
+          document.getElementById('typing-feedback').textContent = "TRY AGAIN";
+          document.getElementById('typing-feedback').className = 'feedback-msg error';
+          setTimeout(() => input.classList.remove('error'), 400);
+        }
+      },
+
+      handleStudyTypingNext() {
+        this.state.studyWordIndex++;
+        this.loadStudyWord();
+      },
+
+      // ======= FINAL TEST =======
+      startFinalTest() {
+        const shuffled = [...VOCABULARY].sort(() => 0.5 - Math.random()).slice(0, 20);
+        this.state.testQuestions = shuffled.map(w => {
+          const wrong = VOCABULARY.filter(ww => ww.id !== w.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+          return { target: w, options: [w, ...wrong].sort(() => 0.5 - Math.random()) };
+        });
+
+        this.state.currentTestIndex = 0;
+        this.state.correctAnswersCount = 0;
+        this.state.timeLeft = 300;
+        
+        document.getElementById('test-timer-warning').style.display = 'none';
+        
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-test').classList.add('active');
+        
+        this.startTestTimer();
+        this.renderTestQuestion();
+      },
+
+      startTestTimer() {
+        clearInterval(this.state.timerInterval);
+        this.updateTestTimerDisplay();
+        this.state.timerInterval = setInterval(() => {
+          this.state.timeLeft--;
+          this.updateTestTimerDisplay();
+          if (this.state.timeLeft <= 0) {
+            clearInterval(this.state.timerInterval);
+            document.getElementById('test-timer-warning').style.display = 'block';
+            document.getElementById('test-timer').style.color = 'var(--accent-failure)';
+          }
+        }, 1000);
+      },
+
+      updateTestTimerDisplay() {
+        const tObj = document.getElementById('test-timer');
+        if(this.state.timeLeft <= 0) { tObj.textContent = "00:00"; return; }
+        const m = Math.floor(this.state.timeLeft / 60).toString().padStart(2, '0');
+        const s = (this.state.timeLeft % 60).toString().padStart(2, '0');
+        tObj.textContent = `${m}:${s}`;
+      },
+
+      renderTestQuestion() {
+        this.state.isTestAnswered = false;
+        document.getElementById('btn-test-next').style.display = 'none';
+        const qObj = this.state.testQuestions[this.state.currentTestIndex];
+        
+        document.getElementById('test-q-counter').textContent = `${this.state.currentTestIndex + 1}/20`;
+        // Format test question creatively
+        document.getElementById('test-question-box').innerHTML = `
+          <div style="font-size:0.9rem; color:var(--text-muted); font-family:var(--font-display);">TRANSLATE</div>
+          <strong style="color:var(--accent-neon); font-size:2rem; letter-spacing:1px;">${qObj.target.word}</strong>
+        `;
+
+        const grid = document.getElementById('test-options');
+        grid.innerHTML = '';
+        qObj.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.translation;
+          btn.onclick = (e) => this.evalTestOption(e.target, opt.id === qObj.target.id, qObj.options, qObj.target.id);
+          grid.appendChild(btn);
+        });
+      },
+
+      evalTestOption(btn, isCorrect, optionsData, correctId) {
+        if (this.state.isTestAnswered) return;
+        this.state.isTestAnswered = true;
+
+        document.querySelectorAll('#view-test .option-btn').forEach(b => b.disabled = true);
+
+        if (isCorrect) {
+          btn.classList.add('correct');
+          this.state.correctAnswersCount++;
+        } else {
+          btn.classList.add('wrong');
+          document.querySelectorAll('#view-test .option-btn').forEach((b, i) => {
+            if (optionsData[i].id === correctId) b.classList.add('correct');
+          });
+        }
+        
+        document.getElementById('btn-test-next').style.display = 'block';
+        if (this.state.currentTestIndex === this.state.testQuestions.length - 1) {
+          document.getElementById('btn-test-next').textContent = "BATTLE SONUCU";
+        } else {
+          document.getElementById('btn-test-next').textContent = "SIRADAKİ SORU";
+        }
+      },
+
+      handleTestNext() {
+        if (this.state.currentTestIndex < this.state.testQuestions.length - 1) {
+          this.state.currentTestIndex++;
+          this.renderTestQuestion();
+        } else {
+          this.finishFinalTest();
+        }
+      },
+
+      finishFinalTest() {
+        clearInterval(this.state.timerInterval);
+        const total = this.state.testQuestions.length;
+        const correct = this.state.correctAnswersCount;
+        const percentage = (correct / total) * 100;
+        
+        let stars = 0;
+        if (percentage >= 90) stars = 3;
+        else if (percentage >= 70) stars = 2;
+        else if (percentage >= 35) stars = 1;
+
+        const pointsEarned = correct * 20 + (stars * 100);
+        this.addPointsAndSave(pointsEarned, stars); 
+
+        const starsContainer = document.getElementById('result-stars');
+        starsContainer.innerHTML = '';
+        for (let i = 1; i <= 3; i++) {
+          starsContainer.innerHTML += `<span class="${i <= stars ? 'filled' : ''}">★</span>`;
+        }
+        
+        document.getElementById('result-title').textContent = stars >= 2 ? "STAGE CLEARED!" : "GAME OVER";
+        document.getElementById('result-title').style.color = stars >= 2 ? "var(--accent-success)" : "var(--accent-failure)";
+        document.getElementById('result-score').textContent = `${correct}/${total} Doğru (+${pointsEarned} Puan)`;
+        document.getElementById('result-message').textContent = stars >= 2 ? "Mükemmel! C2 ustalığına bir adım daha yaklaştın." : "Daha fazla çalışmalısın, skorunu yükseltmek için tekrar dene.";
+
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-result').classList.add('active');
+      }
+    };
+  </script>
+</body>
+</html>
