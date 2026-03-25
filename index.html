@@ -430,9 +430,9 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZHpnb3Jmb295cWJpc2NmYnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTQ1OTEsImV4cCI6MjA5MDAzMDU5MX0.qouX6ulLt9oLOGdMRmfBcX5WezlZUkmEXflgtwxa5qQ';
     
     // Initialize Supabase only if keys are provided (to prevent crashing UI if user hasn't set them yet)
-    let supabase = null;
+    let supabaseClient = null;
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL_HERE') {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     const VOCABULARY = [
@@ -485,7 +485,7 @@
 
       async init() {
         // Remove dummy initialization if Supabase is properly linked
-        if (!supabase) {
+        if (!supabaseClient) {
           // Dev mock bypass if keys aren't set
           document.getElementById('auth-overlay').style.display = 'none';
           document.getElementById('app-container').style.display = 'flex';
@@ -495,7 +495,7 @@
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
           await this.handleUserLogin(session.user);
         } else {
@@ -518,7 +518,7 @@
       },
 
       async submitAuth() {
-        if (!supabase) return alert("Supabase keys are not configured in index.html!");
+        if (!supabaseClient) return alert("Supabase keys are not configured in index.html!");
         
         const username = document.getElementById('auth-username').value.trim();
         const pwd = document.getElementById('auth-password').value;
@@ -531,15 +531,15 @@
         const email = `${username.toLowerCase()}@c2masterclass.local`;
 
         if (this.isLoginMode) {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
           if (error) { errObj.textContent = error.message; } 
           else { errObj.textContent = ""; await this.handleUserLogin(data.user); }
         } else {
-          const { data, error } = await supabase.auth.signUp({ email, password: pwd, options: { data: { username } } });
+          const { data, error } = await supabaseClient.auth.signUp({ email, password: pwd, options: { data: { username } } });
           if (error) { errObj.textContent = error.message; }
           else {
             // Insert initial record in leaderboard
-            await supabase.from('leaderboard').insert([{ user_id: data.user.id, username, score: 0, stars: 0 }]);
+            await supabaseClient.from('leaderboard').insert([{ user_id: data.user.id, username, score: 0, stars: 0 }]);
             errObj.textContent = ""; 
             await this.handleUserLogin(data.user);
           }
@@ -549,7 +549,7 @@
       async handleUserLogin(user) {
         this.user = user;
         // Fetch user from Leaderboard
-        const { data, error } = await supabase.from('leaderboard').select('*').eq('user_id', user.id).single();
+        const { data, error } = await supabaseClient.from('leaderboard').select('*').eq('user_id', user.id).single();
         if (data) {
            this.dbUser = { username: data.username, score: data.score, stars: data.stars };
         } else {
@@ -565,7 +565,7 @@
       },
 
       async logout() {
-        if(supabase) await supabase.auth.signOut();
+        if(supabaseClient) await supabaseClient.auth.signOut();
         window.location.reload();
       },
 
@@ -580,16 +580,16 @@
         this.dbUser.stars = Math.max(this.dbUser.stars, starsGained); // Keep highest stage stars
         this.updateUserStats();
         
-        if (supabase && this.user) {
-           await supabase.from('leaderboard').update({ score: this.dbUser.score, stars: this.dbUser.stars }).eq('user_id', this.user.id);
+        if (supabaseClient && this.user) {
+           await supabaseClient.from('leaderboard').update({ score: this.dbUser.score, stars: this.dbUser.stars }).eq('user_id', this.user.id);
            this.fetchLeaderboard();
         }
       },
 
       async fetchLeaderboard() {
-        if (!supabase) return;
+        if (!supabaseClient) return;
         const list = document.getElementById('leaderboard-list');
-        const { data, error } = await supabase.from('leaderboard').select('username, score, stars').order('score', { ascending: false }).limit(10);
+        const { data, error } = await supabaseClient.from('leaderboard').select('username, score, stars').order('score', { ascending: false }).limit(10);
         
         document.getElementById('lb-loading').style.display = 'none';
         list.innerHTML = '';
