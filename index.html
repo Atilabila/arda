@@ -291,18 +291,18 @@
   <!-- AUTHENTICATION OVERLAY -->
   <div id="auth-overlay">
     <div class="auth-modal">
-      <h2 id="auth-title">ARCADE<br>LOGIN</h2>
-      <div class="input-group">
-        <label>Username</label>
-        <input type="text" id="auth-username" class="auth-input" placeholder="Player1">
-      </div>
-      <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="auth-password" class="auth-input" placeholder="••••••••">
-      </div>
-      <button class="btn-auth" id="btn-auth-submit" onclick="app.submitAuth()">START GAME</button>
-      <div class="auth-switch" onclick="app.toggleAuthMode()" id="auth-switch-text">New player? Register here.</div>
-      <div id="auth-error"></div>
+      <h2 id="auth-title">ADMIN<br>LOGIN</h2>
+      <p style="color:var(--text-muted); margin-bottom:1.5rem;">One-Click Auto Login</p>
+      
+      <button class="btn-auth" onclick="app.autoLoginAdmin('Atila')" style="background:var(--accent-neon); color:var(--bg-primary);">
+        🤖 LOGIN AS ATİLA
+      </button>
+      
+      <button class="btn-auth" onclick="app.autoLoginAdmin('Arda')" style="background:var(--accent-neon-dim); color:var(--bg-primary); margin-top:2rem;">
+        🤖 LOGIN AS ARDA
+      </button>
+
+      <div id="auth-error" style="margin-top:2rem;"></div>
     </div>
   </div>
 
@@ -509,39 +509,32 @@
       },
 
       // ======= AUTH LOGIC =======
-      toggleAuthMode() {
-        this.isLoginMode = !this.isLoginMode;
-        document.getElementById('auth-title').innerHTML = this.isLoginMode ? "ARCADE<br>LOGIN" : "REGISTER<br>NEW PLAYER";
-        document.getElementById('btn-auth-submit').textContent = this.isLoginMode ? "START GAME" : "CREATE ACCOUNT";
-        document.getElementById('auth-switch-text').textContent = this.isLoginMode ? "New player? Register here." : "Already have an account? Login.";
-        document.getElementById('auth-error').textContent = "";
-      },
-
-      async submitAuth() {
+      async autoLoginAdmin(username) {
         if (!supabaseClient) return alert("Supabase keys are not configured in index.html!");
         
-        const username = document.getElementById('auth-username').value.trim();
-        const pwd = document.getElementById('auth-password').value;
+        const pwd = "superadmin123456"; // hardcoded secure password for all auto-login users
         const errObj = document.getElementById('auth-error');
-        errObj.textContent = "Loading...";
+        errObj.textContent = "Bağlanıyor...";
 
-        if (!username || !pwd) { errObj.textContent = "Please enter both username and password."; return; }
+        const safeUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const email = `${safeUsername}@c2masterclass.local`;
+
+        // Attempt Login First
+        const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
         
-        // Use fake email trick for Supabase Auth
-        const email = `${username.toLowerCase()}@c2masterclass.local`;
-
-        if (this.isLoginMode) {
-          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
-          if (error) { errObj.textContent = error.message; } 
-          else { errObj.textContent = ""; await this.handleUserLogin(data.user); }
+        if (!signInError) {
+          errObj.textContent = ""; 
+          await this.handleUserLogin(signInData.user);
         } else {
-          const { data, error } = await supabaseClient.auth.signUp({ email, password: pwd, options: { data: { username } } });
-          if (error) { errObj.textContent = error.message; }
-          else {
-            // Insert initial record in leaderboard
-            await supabaseClient.from('leaderboard').insert([{ user_id: data.user.id, username, score: 0, stars: 0 }]);
+          // If login fails (doesn't exist), try to auto-Signup
+          const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password: pwd, options: { data: { username } } });
+          if (signUpError) { 
+            errObj.textContent = "Error: " + signUpError.message; 
+          } else {
+            // New user registered! Create leaderboard profile.
+            await supabaseClient.from('leaderboard').insert([{ user_id: signUpData.user.id, username, score: 0, stars: 0 }]);
             errObj.textContent = ""; 
-            await this.handleUserLogin(data.user);
+            await this.handleUserLogin(signUpData.user);
           }
         }
       },
